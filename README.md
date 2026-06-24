@@ -2,6 +2,9 @@
 
 [![supply-chain-demo](../../actions/workflows/supply-chain-demo.yml/badge.svg)](../../actions/workflows/supply-chain-demo.yml)
 
+<img width="692" height="196" alt="image" src="https://github.com/user-attachments/assets/9bc396ee-5e71-4b6d-8af1-7aaa328f0097" />
+
+
 A small, self-contained lab that demonstrates a **build-time supply-chain attack** on a
 real CI/CD pipeline: a clean Go web server, a clean git history, and a passing security
 scan — yet the binary that comes out of the pipeline is **backdoored**.
