@@ -1,0 +1,64 @@
+# ⚠️ THE VICTIM'S PIPELINE (intentionally vulnerable — illustrative)
+#
+# This is the pipeline a developer would write and trust. It is the artifact
+# under attack in the story, NOT the lab's own CI. SAST passes, the build looks
+# normal — and the binary still ships backdoored, because the build runs inside
+# a mutable, unverified builder image (see the `container.image` line below).
+#
+# The lab's REAL, runnable CI lives at /.github/workflows/supply-chain-demo.yml
+# and demonstrates the detection. The "HARDENED" job at the bottom of this file
+# shows the two-line fix.
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: SAST Scan
+        run: |
+          echo "Running SAST scan on source code..."
+          # Scans application source only — and the source is genuinely clean. This passes.
+          grep -rn "__backdoor__" --include='*.go' --exclude='*_test.go' . && exit 1 || echo "No backdoors found in source"
+      - name: Dependency Scan
+        run: |
+          echo "Running dependency scan..."
+          echo "All dependencies clean (no vulnerabilities detected)"
+
+  build:
+    needs: security-scan
+    runs-on: ubuntu-latest
+    container:
+      image: company/go-builder:latest   # ← THE VULNERABILITY: mutable tag, no digest, no verification
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build binary
+        run: go build -o server .          # looks normal; the poisoned image injects the backdoor here
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-binary
+          path: ./server
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # HARDENED build (the fix). Pin the image to a digest so a swapped "latest"
+  # cannot be pulled silently, and verify the artifact against a clean reference
+  # build before trusting it. Replace the digest with your own pinned value.
+  #
+  # build-hardened:
+  #   needs: security-scan
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: golang@sha256:<pin-the-exact-digest-here>   # not a mutable tag
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: go build -o server .
+  #     # Independent clean reference build + reproducible-build gate:
+  #     - run: docker run --rm -v "$PWD":/app -w /app golang:1.22-alpine go build -o /tmp/ref .
+  #     - run: bash ../verify_reproducible.sh /tmp/ref server   # fails the build if they differ
