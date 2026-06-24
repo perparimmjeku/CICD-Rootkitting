@@ -30,7 +30,7 @@ git ls-files | sed 's/^/    /'
 echo ""
 
 echo "  Searching source for backdoor strings..."
-if grep -rq "backdoor\|X-Backdoor" --include="*.go" --exclude="*_test.go" .; then
+if grep -rq "__backdoor__" --include="*.go" --exclude="*_test.go" .; then
     echo "  ✗ FOUND — source is dirty"
     exit 1
 else
@@ -50,8 +50,10 @@ sleep 1
 
 # ── PHASE 2: CI PIPELINE VIEW ─────────────────────────────────────────────
 echo "═══════════════════════════════════════════════════════════════════"
-echo "  PHASE 2 — CI PIPELINE (.github/workflows/build.yml)"
+echo "  PHASE 2 — CI PIPELINE (clean_app/.github/workflows/build.yml)"
 echo "═══════════════════════════════════════════════════════════════════"
+echo ""
+echo "  (the app's own pipeline — view it: cat clean_app/.github/workflows/build.yml)"
 echo ""
 echo "  jobs:"
 echo "    security-scan:"
@@ -60,7 +62,7 @@ echo "      - SAST scan on source         → scanning main.go..."
 sleep 0.5
 
 # Simulate SAST — scans only source files
-if grep -q "backdoor" "$SCRIPT_DIR/clean_app/main.go" 2>/dev/null; then
+if grep -q "__backdoor__" "$SCRIPT_DIR/clean_app/main.go" 2>/dev/null; then
     echo "      ✗ SAST FAILED — backdoor found in source"
     exit 1
 else
