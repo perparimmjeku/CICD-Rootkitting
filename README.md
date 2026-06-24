@@ -338,5 +338,4 @@ of the license file).
 
 ---
 
-*Originally built for a BSides Porto 2026 talk. Further reading: [slsa.dev](https://slsa.dev),
-[sigstore.dev](https://www.sigstore.dev).*
+
